@@ -1,7 +1,9 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+// Avoid importing `bcryptjs` at module scope because it uses Node APIs
+// that are incompatible with the Edge runtime. Import dynamically
+// inside server-only functions instead.
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -24,7 +26,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("User not found");
         }
 
-        const isPasswordValid = await bcrypt.compare(
+        const { compare } = await import('bcryptjs');
+        const isPasswordValid = await compare(
           credentials.password as string,
           user.password
         );
