@@ -1,0 +1,142 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ma/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for multi-user accounts
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String    // Hashed password
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  chats         Chat[]
+  analytics     Analytics?
+  profile       UserProfile?
+  sessions      Session[]
+  
+  @@index([email])
+}
+
+// User profile settings
+model UserProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  language      String    @default("en") // en, si, ta
+  theme         String    @default("dark") // dark, light
+  notifications Boolean   @default(true)
+  twoFactor     Boolean   @default(false)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Chat sessions
+model Chat {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title         String    @default("New Chat")
+  description   String?
+  isShared      Boolean   @default(false)
+  shareToken    String?   @unique
+  
+  messages      Message[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([shareToken])
+}
+
+// Individual messages in chat
+model Message {
+  id            String    @id @default(cuid())
+  chatId        String
+  chat          Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  role          String    // "user" or "assistant"
+  content       String
+  
+  // Image data
+  imageUrl      String?
+  imageMetadata Json?     // File name, size, type
+  
+  // Analysis results
+  ocrText       String?
+  aiDetection   Json?     // AI detection score
+  factCheck     Json?     // Fact check results
+  contentAnalysis Json?   // SafeSearch, labels, logos
+  
+  createdAt     DateTime  @default(now())
+  
+  @@index([chatId])
+}
+
+// Session management
+model Session {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token         String    @unique
+  userAgent     String?
+  ipAddress     String?
+  
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([token])
+}
+
+// Analytics data
+model Analytics {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  totalChats    Int       @default(0)
+  totalMessages Int       @default(0)
+  totalImages   Int       @default(0)
+  aiGenerated   Int       @default(0)
+  realImages    Int       @default(0)
+  
+  // Fact check stats
+  truthyContent Int       @default(0)
+  falseContent  Int       @default(0)
+  
+  // API usage
+  apiCalls      Int       @default(0)
+  lastActive    DateTime  @default(now())
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Admin audit log
+model AuditLog {
+  id            String    @id @default(cuid())
+  action        String    // login, signup, delete, share, etc
+  userId        String?
+  details       Json?
+  
+  createdAt     DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+}
