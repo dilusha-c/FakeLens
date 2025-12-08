@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ChatApiRequest, ChatApiResponse, Analysis } from '@/types';
+import { ChatApiRequest, ChatApiResponse, Analysis, EvidenceLink } from '@/types';
 import { extractContentFromUrl, isUrl, isFollowUpQuestion } from '@/lib/textExtractor';
 import { detectFakeNews, scoreToVerdict, scoreToConfidence } from '@/lib/fakeDetector';
 import { searchBing, searchFactCheck, classifyLinks, searchWithSnippets } from '@/lib/evidenceSearch';
@@ -142,6 +142,7 @@ export async function POST(request: NextRequest) {
       console.log('Processing new claim...');
       let claimText = userInput;
       let originalUrl: string | undefined;
+      let checkableLink: any; // Declare outside to use later
 
       // ============================================
       // LINK ANALYSIS - Check if input contains links
@@ -223,7 +224,7 @@ export async function POST(request: NextRequest) {
         }
         
         // Extract content from the first checkable link
-        const checkableLink = linkAnalyses.find(a => a.isFactCheckable);
+        checkableLink = linkAnalyses.find(a => a.isFactCheckable);
         if (checkableLink && checkableLink.extractedContent) {
           console.log('Using content from analyzed link');
           claimText = checkableLink.extractedContent;
@@ -284,9 +285,9 @@ export async function POST(request: NextRequest) {
       console.log('Searching for evidence...');
       const query = claimText.substring(0, 200); // Limit query length
       
-      let serpApiResults = [];
-      let factCheckResults = [];
-      let serpApiResultsEnglish = [];
+      let serpApiResults: EvidenceLink[] = [];
+      let factCheckResults: EvidenceLink[] = [];
+      let serpApiResultsEnglish: EvidenceLink[] = [];
       
       try {
         // Start both original language search and translation in parallel
@@ -353,7 +354,7 @@ export async function POST(request: NextRequest) {
           supportLinks.unshift({
             title: checkableLink.metadata.title || 'Direct Source',
             url: originalUrl,
-            snippet: checkableLink.extractedContent?.substring(0, 200) || '',
+            source: checkableLink.url ? new URL(checkableLink.url).hostname.replace('www.', '') : domain,
           });
           console.log('Added trusted source URL to support links:', domain);
         }

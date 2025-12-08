@@ -23,7 +23,7 @@ const LOW_TRUST_DOMAINS = [
 /**
  * Searches SerpAPI for relevant articles
  */
-export async function searchBing(query: string, language: 'si' | 'en' = 'en'): Promise<EvidenceLink[]> {
+export async function searchBing(query: string, language: 'si' | 'en' | 'ta' = 'en'): Promise<EvidenceLink[]> {
   const results = await searchWithSnippets(query, language);
   return results.map(({ title, url, source }) => ({ title, url, source }));
 }
@@ -31,7 +31,7 @@ export async function searchBing(query: string, language: 'si' | 'en' = 'en'): P
 /**
  * Searches SerpAPI and returns results with snippets
  */
-export async function searchWithSnippets(query: string, language: 'si' | 'en' = 'en'): Promise<Array<{ title: string; url: string; source: string; snippet?: string }>> {
+export async function searchWithSnippets(query: string, language: 'si' | 'en' | 'ta' = 'en'): Promise<Array<{ title: string; url: string; source: string; snippet?: string }>> {
   const apiKey = process.env.SERPAPI_API_KEY;
   
   if (!apiKey) {
@@ -46,8 +46,8 @@ export async function searchWithSnippets(query: string, language: 'si' | 'en' = 
         q: query,
         engine: 'google',
         num: 10,
-        gl: language === 'si' ? 'lk' : 'us', // Sri Lanka or US
-        hl: language === 'si' ? 'si' : 'en', // Sinhala or English
+        gl: language === 'si' || language === 'ta' ? 'lk' : 'us', // Sri Lanka for Sinhala/Tamil, otherwise US
+        hl: language === 'si' ? 'si' : language === 'ta' ? 'ta' : 'en', // Sinhala, Tamil or English
       },
     });
 

@@ -278,7 +278,7 @@ function isFactCheckable(
   }
   
   // Personal posts without factual claims
-  if (contentType === 'personalPost') {
+  if (contentType === 'personal-post') {
     return {
       checkable: false,
       reason: 'This is a personal blog post or diary. If it contains factual claims about science, health, or current events, extract those specific claims for verification.',

@@ -6,7 +6,7 @@ import { detectPersonalInfo, createPersonalInfoMessage } from '@/lib/personalInf
 
 interface ChatInputProps {
   onSend: (message: string) => void;
-  onImageUpload?: (imageData: any) => void;
+  onImageUpload?: (imageData: any, imageFile: File) => void;
   disabled: boolean;
   hasAnalysis: boolean;
   currentAnalysis?: Analysis;

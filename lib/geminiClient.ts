@@ -66,9 +66,11 @@ async function callGeminiWithFallback(prompt: string): Promise<string> {
 /**
  * Generates a response for a new claim analysis
  */
-export async function generateClaimResponse(analysis: Analysis, language: 'si' | 'en' = 'en'): Promise<string> {
+export async function generateClaimResponse(analysis: Analysis, language: 'si' | 'en' | 'ta' = 'en'): Promise<string> {
   const languageInstruction = language === 'si' 
     ? 'Respond in Sinhala (සිංහල). Provide a brief, clear explanation in Sinhala.'
+    : language === 'ta'
+    ? 'Respond in Tamil (தமிழ்). Provide a brief, clear explanation in Tamil.'
     : 'Respond in English.';
 
   // Special handling for unanalyzable claims
@@ -121,10 +123,12 @@ ${language === 'si' ? 'Remember to include a disclaimer in Sinhala that this is 
 export async function generateFollowUpWithSearch(
   question: string,
   searchResults: { title: string; url: string; source: string; snippet?: string }[],
-  language: 'si' | 'en' = 'en'
+  language: 'si' | 'en' | 'ta' = 'en'
 ): Promise<string> {
   const languageInstruction = language === 'si' 
     ? 'Respond in Sinhala (සිංහල).'
+    : language === 'ta'
+    ? 'Respond in Tamil (தமிழ்).'
     : 'Respond in English.';
 
   const resultsText = searchResults
@@ -151,10 +155,12 @@ export async function generateFollowUpResponse(
   question: string,
   analysis: Analysis,
   conversationHistory: Message[],
-  language: 'si' | 'en' = 'en'
+  language: 'si' | 'en' | 'ta' = 'en'
 ): Promise<string> {
   const languageInstruction = language === 'si' 
     ? 'Respond in Sinhala (සිංහල).'
+    : language === 'ta'
+    ? 'Respond in Tamil (தமிழ்).'
     : 'Respond in English.';
 
   const historyText = conversationHistory
