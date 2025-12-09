@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-
-// Configure pdfjs worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -23,23 +19,12 @@ interface DocumentAnalysisResult {
 
 async function extractTextFromPDF(buffer: Buffer): Promise<{ text: string; pageCount: number }> {
   try {
-    // Load PDF document
-    const loadingTask = pdfjsLib.getDocument({ data: buffer });
-    const pdf = await loadingTask.promise;
-    const numPages = pdf.numPages;
-    let fullText = '';
-
-    // Extract text from each page
-    for (let i = 1; i <= numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      fullText += pageText + '\n';
-    }
-
+    // Use pdf-parse-fork which is compatible with Next.js
+    const pdfParse = require('pdf-parse-fork');
+    const data = await pdfParse(buffer);
     return {
-      text: fullText.trim(),
-      pageCount: numPages,
+      text: data.text,
+      pageCount: data.numpages,
     };
   } catch (error) {
     console.error('PDF parsing error:', error);

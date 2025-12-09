@@ -5,11 +5,28 @@ import { auth } from '@/lib/auth';
 export async function middleware(request: NextRequest) {
   const session = await auth();
 
+  // Admin routes check
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    if (!session || !session.user) {
+      return NextResponse.redirect(new URL('/auth/login', request.url));
+    }
+    
+    const userRole = session.user.role;
+    console.log('Admin check - User role:', userRole, 'Session:', JSON.stringify(session.user));
+    
+    if (userRole !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+
   // Protected routes that require authentication
-  const protectedRoutes = ['/chat', '/dashboard', '/api/chats', '/api/analytics'];
+  const protectedRoutes = ['/dashboard', '/api/analytics'];
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   );
+
+  // Allow guest access to main routes (/, /api/chat, /api/upload-*, /api/chats for guest sessions)
+  // These will handle guest credit checking internally
 
   // Allow NextAuth routes to pass through
   if (request.nextUrl.pathname.startsWith('/api/auth')) {

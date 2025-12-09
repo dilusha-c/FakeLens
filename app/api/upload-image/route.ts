@@ -6,12 +6,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTextFromImage, analyzeImageContent } from '@/lib/imageAnalysis';
 import { detectAIGeneratedImage } from '@/lib/aiImageDetector';
+import { trackApiUsage } from '@/lib/analytics';
+import { auth } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds timeout
 
 export async function POST(req: NextRequest) {
   try {
+    // Get user session for analytics tracking
+    const session = await auth();
+    const userId = session?.user?.id;
+    
     const formData = await req.formData();
     const file = formData.get('image') as File;
     
@@ -107,6 +113,13 @@ export async function POST(req: NextRequest) {
         };
       }),
     ]);
+    
+    // Track API usage
+    if (userId) {
+      if (ocrResult.extractedText) await trackApiUsage(userId, 'vision');
+      if (aiDetection.confidence > 0) await trackApiUsage(userId, 'sightengine');
+      if (contentAnalysis.labels.length > 0) await trackApiUsage(userId, 'vision');
+    }
     
     console.log('Image analysis complete:', {
       textLength: ocrResult.extractedText.length,

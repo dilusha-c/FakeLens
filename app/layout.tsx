@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'FakeLens - Fake News Verification Assistant',
   description: 'AI-powered fact-checking assistant to verify news, links, and claims',
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({

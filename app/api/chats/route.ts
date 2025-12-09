@@ -13,11 +13,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get all chats for user
+    // Get all chats for user (limit to recent 50 for performance)
     const chats = await prisma.chat.findMany({
       where: { userId: session.user.id },
-      include: { messages: true },
+      include: { 
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        }
+      },
       orderBy: { updatedAt: "desc" },
+      take: 50, // Limit to 50 most recent chats
     });
 
     // Helper function to safely parse JSON

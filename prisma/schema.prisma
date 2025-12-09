@@ -16,6 +16,8 @@ model User {
   email         String    @unique
   name          String?
   password      String    // Hashed password
+  role          String    @default("user") // user, admin, moderator
+  isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -26,6 +28,7 @@ model User {
   sessions      Session[]
   
   @@index([email])
+  @@index([role])
 }
 
 // User profile settings
@@ -60,6 +63,7 @@ model Chat {
   updatedAt     DateTime  @updatedAt
   
   @@index([userId])
+  @@index([userId, updatedAt])
   @@index([shareToken])
 }
 
@@ -120,8 +124,15 @@ model Analytics {
   truthyContent Int       @default(0)
   falseContent  Int       @default(0)
   
-  // API usage
+  // API usage - individual API tracking
   apiCalls      Int       @default(0)
+  serpApiCalls  Int       @default(0)
+  factCheckApiCalls Int   @default(0)
+  geminiApiCalls Int      @default(0)
+  visionApiCalls Int      @default(0)
+  sightEngineApiCalls Int @default(0)
+  searchApiCalls Int      @default(0)
+  
   lastActive    DateTime  @default(now())
   
   createdAt     DateTime  @default(now())

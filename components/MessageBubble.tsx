@@ -13,20 +13,13 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
   return (
     <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-      {/* Avatar */}
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 ${
-        isUser ? 'bg-blue-500' : 'bg-[var(--accent-green)]'
-      }`}>
-        {isUser ? 'U' : 'FL'}
-      </div>
-
       {/* Message Content */}
       <div className={`flex-1 max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
         {message.imagePreview ? (
           // Image Preview Display (User Upload)
           <div className={`rounded-2xl p-4 ${
             isUser
-              ? 'bg-blue-500 text-white ml-auto'
+              ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] ml-auto'
               : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
           }`}>
             <div className="flex items-center gap-2 text-sm mb-2">
@@ -48,7 +41,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           // Document Preview Display (User Upload)
           <div className={`rounded-2xl p-4 ${
             isUser
-              ? 'bg-blue-500 text-white ml-auto'
+              ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] ml-auto'
               : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
           }`}>
             <div className="flex items-center gap-2 text-sm mb-2">
@@ -71,7 +64,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           <div className="w-full">
             <div className={`rounded-2xl p-3 mb-2 ${
               isUser
-                ? 'bg-blue-500 text-white ml-auto'
+                ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] ml-auto'
                 : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
             }`}>
               <div className="whitespace-pre-wrap break-words">
@@ -88,7 +81,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           <div className="w-full">
             <div className={`rounded-2xl p-3 mb-2 ${
               isUser
-                ? 'bg-blue-500 text-white ml-auto'
+                ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] ml-auto'
                 : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
             }`}>
               <div className="whitespace-pre-wrap break-words">
@@ -101,7 +94,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           // Regular Text Message
           <div className={`rounded-2xl p-4 ${
             isUser
-              ? 'bg-blue-500 text-white ml-auto'
+              ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] ml-auto'
               : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
           }`}>
             <div className="whitespace-pre-wrap break-words">

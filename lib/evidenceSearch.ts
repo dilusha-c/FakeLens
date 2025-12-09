@@ -25,7 +25,7 @@ const LOW_TRUST_DOMAINS = [
  */
 export async function searchBing(query: string, language: 'si' | 'en' | 'ta' = 'en'): Promise<EvidenceLink[]> {
   const results = await searchWithSnippets(query, language);
-  return results.map(({ title, url, source }) => ({ title, url, source }));
+  return results.map(({ title, url, source, snippet }) => ({ title, url, source, snippet }));
 }
 
 /**
@@ -59,14 +59,13 @@ export async function searchWithSnippets(query: string, language: 'si' | 'en' | 
         const isTrusted = TRUSTED_DOMAINS.some(d => domain.includes(d));
         const isLowTrust = LOW_TRUST_DOMAINS.some(d => domain.includes(d));
 
-        if (isTrusted || !isLowTrust) {
-          results.push({
-            title: item.title,
-            url: item.link,
-            source: domain,
-            snippet: item.snippet,
-          });
-        }
+        // Keep results but tag them; filtering is done later in classification
+        results.push({
+          title: item.title,
+          url: item.link,
+          source: domain,
+          snippet: item.snippet,
+        });
       }
     }
 
@@ -103,12 +102,14 @@ export async function searchFactCheck(query: string): Promise<EvidenceLink[]> {
       for (const claim of response.data.claims) {
         if (claim.claimReview && claim.claimReview.length > 0) {
           const review = claim.claimReview[0];
-          
+          // Map fact-check review to EvidenceLink with a rating and moderate confidence
           results.push({
             title: claim.text || review.title || 'Fact Check',
             url: review.url,
             source: review.publisher?.name || 'Fact Checker',
             rating: review.textualRating,
+            snippet: review.title || claim.text,
+            confidence: 0.9, // fact-check result is high-confidence evidence
           });
         }
       }
@@ -143,33 +144,69 @@ export function classifyLinks(
   const supportLinks: EvidenceLink[] = [];
   const debunkLinks: EvidenceLink[] = [];
 
-  // Classify SerpAPI results (trusted sources as support)
+  // Classify SerpAPI results using title/snippet and domain reputation
+  const debunkKeywords = ['debunk', 'fact-check', 'fact check', 'false', 'incorrect', 'misleading', 'hoax', 'not true', 'fake', 'fabricated'];
+  const supportKeywords = ['confirmed', 'reported', 'official', 'announced', 'said', 'statement', 'according to', 'verifiable'];
+
   for (const link of serpApiResults) {
-    const isTrusted = TRUSTED_DOMAINS.some(d => link.source.includes(d));
-    if (isTrusted) {
+    const domain = link.source || '';
+    const title = (link.title || '').toLowerCase();
+    const snippet = (link.snippet || '').toLowerCase();
+
+    // Start with neutral confidence
+    let confidence = 0.5;
+
+    // Boost confidence for trusted domains
+    if (TRUSTED_DOMAINS.some(d => domain.includes(d))) {
+      confidence = Math.max(confidence, 0.75);
+    }
+    // Lower for known low-trust domains
+    if (LOW_TRUST_DOMAINS.some(d => domain.includes(d))) {
+      confidence = Math.min(confidence, 0.25);
+    }
+
+    // Check for debunking language in title/snippet
+    const hasDebunk = debunkKeywords.some(k => title.includes(k) || snippet.includes(k));
+    const hasSupport = supportKeywords.some(k => title.includes(k) || snippet.includes(k));
+
+    if (hasDebunk && !hasSupport) {
+      // Treat as debunk evidence
+      link.confidence = Math.min(1, (link.confidence || confidence) + 0.25);
+      debunkLinks.push(link);
+    } else if (hasSupport && !hasDebunk) {
+      // Treat as supporting evidence
+      link.confidence = Math.min(1, (link.confidence || confidence) + 0.2);
       supportLinks.push(link);
+    } else {
+      // Neutral; push to support if trusted, else ignore or include as low-confidence support
+      if (TRUSTED_DOMAINS.some(d => domain.includes(d))) {
+        link.confidence = (link.confidence || confidence);
+        supportLinks.push(link);
+      } else {
+        // Low-confidence support (helps but not decisive)
+        link.confidence = (link.confidence || 0.45);
+        supportLinks.push(link);
+      }
     }
   }
 
   // Classify fact check results by rating
+  // Use fact-check results with stronger weights
   for (const link of factCheckResults) {
-    if (link.rating) {
-      const rating = link.rating.toLowerCase();
-      const isFalse = rating.includes('false') || rating.includes('incorrect') || 
-                      rating.includes('misleading') || rating.includes('pants on fire');
-      const isTrue = rating.includes('true') || rating.includes('correct') || 
-                     rating.includes('accurate');
+    const rating = (link.rating || '').toLowerCase();
+    const isFalse = rating.includes('false') || rating.includes('incorrect') || rating.includes('misleading') || rating.includes('pants on fire');
+    const isTrue = rating.includes('true') || rating.includes('correct') || rating.includes('accurate');
 
-      if (isFalse) {
-        debunkLinks.push(link);
-      } else if (isTrue) {
-        supportLinks.push(link);
-      } else {
-        // Mixed or uncertain ratings go to debunk
-        debunkLinks.push(link);
-      }
+    // Default high confidence for fact-check entries unless specified
+    link.confidence = link.confidence ?? 0.9;
+
+    if (isFalse) {
+      debunkLinks.push(link);
+    } else if (isTrue) {
+      supportLinks.push(link);
     } else {
-      // No rating, add to debunk as fact check reference
+      // No explicit rating - treat as debunk reference but lower confidence
+      link.confidence = Math.min(0.85, link.confidence);
       debunkLinks.push(link);
     }
   }

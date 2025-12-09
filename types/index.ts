@@ -69,6 +69,8 @@ export interface EvidenceLink {
   url: string;
   source: string;
   rating?: string;
+  snippet?: string;
+  confidence?: number; // 0..1 estimated confidence that this link supports (positive) or debunks (negative) the claim
 }
 
 export interface Analysis {

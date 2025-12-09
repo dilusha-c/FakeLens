@@ -12,10 +12,43 @@ import { verifyWithExperts } from '@/lib/expertNetwork';
 import { analyzeSourceReputation } from '@/lib/sourceReputation';
 import { monitorRealTime } from '@/lib/realTimeMonitoring';
 import { analyzeAllLinks, getFactCheckingSuggestions } from '@/lib/linkAnalyzer';
+import { trackApiUsage } from '@/lib/analytics';
+import { auth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Chat API called');
+    
+    // Helper: promise with fallback timeout to avoid long blocking external calls
+    const withTimeout = async <T>(p: Promise<T>, ms: number, fallback: T): Promise<T> => {
+      let settled = false;
+      return new Promise<T>((resolve) => {
+        p.then((res) => {
+          if (!settled) {
+            settled = true;
+            resolve(res);
+          }
+        }).catch((err) => {
+          if (!settled) {
+            settled = true;
+            console.error('withTimeout - inner promise error:', err);
+            resolve(fallback);
+          }
+        });
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            console.warn(`withTimeout: operation timed out after ${ms}ms`);
+            resolve(fallback);
+          }
+        }, ms);
+      });
+    };
+
+    // Get user session for analytics tracking but don't let a slow auth block the chat
+    const session = await withTimeout(auth(), 500, undefined as any);
+    const userId = session?.user?.id;
+    
     const body: ChatApiRequest = await request.json();
     const { messages, analysis: existingAnalysis } = body;
     console.log('Received messages:', messages.length);
@@ -58,11 +91,22 @@ export async function POST(request: NextRequest) {
         const contextualQuery = `${existingAnalysis.claimText.substring(0, 100)} ${userInput}`;
         console.log('Search query with context:', contextualQuery);
         const searchResults = await searchWithSnippets(contextualQuery, language);
+        
+        // Track SERP API usage (non-blocking)
+        if (userId && searchResults.length > 0) {
+          trackApiUsage(userId, 'serp').catch((e) => console.error('trackApiUsage(serp) failed', e));
+        }
+        
         console.log('Search results found:', searchResults.length);
         
         let responseText = '';
         try {
           responseText = await generateFollowUpWithSearch(userInput, searchResults, language);
+          
+          // Track Gemini API usage (non-blocking)
+          if (userId) {
+            trackApiUsage(userId, 'gemini').catch((e) => console.error('trackApiUsage(gemini) failed', e));
+          }
         } catch (error: any) {
           // Fallback if Gemini fails (quota exceeded, etc.)
           console.log('Gemini failed, using fallback response');
@@ -293,20 +337,33 @@ export async function POST(request: NextRequest) {
         // Start both original language search and translation in parallel
         const [searchResults, translationResult] = await Promise.all([
           Promise.all([
-            searchBing(query, language),
-            searchFactCheck(query),
+            // Bound search calls so they don't hang the entire request
+            withTimeout(searchBing(query, language), 4000, [] as EvidenceLink[]),
+            withTimeout(searchFactCheck(query), 4000, [] as EvidenceLink[]),
           ]),
           translationPromise,
         ]);
         
-        serpApiResults = searchResults[0];
-        factCheckResults = searchResults[1];
+        serpApiResults = searchResults[0] || [];
+        factCheckResults = searchResults[1] || [];
+        
+        // Track API usage (fire-and-forget to avoid blocking response)
+        if (userId) {
+          if (serpApiResults.length > 0) trackApiUsage(userId, 'serp').catch((e) => console.error('trackApiUsage(serp) failed', e));
+          if (factCheckResults.length > 0) trackApiUsage(userId, 'factcheck').catch((e) => console.error('trackApiUsage(factcheck) failed', e));
+        }
         
         // If content was translated, also search with English translation
-        if (translationResult.wasTranslated && translationResult.englishText !== claimText) {
+          if (translationResult.wasTranslated && translationResult.englishText !== claimText) {
           console.log('Searching with English translation...');
           const englishQuery = translationResult.englishText.substring(0, 200);
-          serpApiResultsEnglish = await searchBing(englishQuery, 'en');
+          serpApiResultsEnglish = await withTimeout(searchBing(englishQuery, 'en'), 4000, [] as EvidenceLink[]);
+          
+          // Track additional search (non-blocking)
+          if (userId && (serpApiResultsEnglish?.length || 0) > 0) {
+            trackApiUsage(userId, 'serp').catch((e) => console.error('trackApiUsage(serp) failed', e));
+          }
+          
           console.log('Evidence found - Original:', serpApiResults.length, 'English:', serpApiResultsEnglish.length);
         } else {
           console.log('Evidence found - SerpAPI:', serpApiResults.length, 'FactCheck:', factCheckResults.length);
@@ -378,15 +435,15 @@ export async function POST(request: NextRequest) {
         console.log('Added original source URL for validation:', originalUrl);
       }
       
-      // Run all advanced analyses in parallel
-      const [
-        sriLankaAnalysis,
-        historicalAnalysis,
-        nlpAnalysis,
-        expertVerification,
-        sourceReputation,
-        realTimeMonitoring,
-      ] = await Promise.all([
+      // Run all advanced analyses in parallel, but don't wait forever — use a bounded timeout
+      const defaultSri = { totalScoreAdjustment: 0, details: { translation: { wasTranslated: false, originalLanguage: null }, rumorPatterns: { detectedPatterns: [] }, sourceValidation: { trustedCount: 0 } } } as any;
+      const defaultHistorical = { scoreAdjustment: 0, isRecurringPattern: false, similarityScore: 0, seasonalFlag: false } as any;
+      const defaultNLP = { scoreAdjustment: 0, warnings: [] } as any;
+      const defaultExpert = { scoreAdjustment: 0, factCheckers: [], expertOpinions: [] } as any;
+      const defaultSourceReputation = { scoreAdjustment: 0, warnings: [] } as any;
+      const defaultRealTime = { scoreAdjustment: 0, hasOfficialStatement: false, hasActiveAlert: false } as any;
+
+      const analysesPromise = Promise.all([
         analyzeSriLankaContent(claimText, allSourceUrls),
         analyzeHistoricalContext(claimText),
         analyzeNLP(claimText),
@@ -394,6 +451,20 @@ export async function POST(request: NextRequest) {
         analyzeSourceReputation(allSourceUrls),
         monitorRealTime(claimText),
       ]);
+
+      const analyses = (await Promise.race([
+        analysesPromise,
+        new Promise((resolve) => setTimeout(() => resolve([defaultSri, defaultHistorical, defaultNLP, defaultExpert, defaultSourceReputation, defaultRealTime]), 4000))
+      ])) as any[];
+
+      const [
+        sriLankaAnalysis,
+        historicalAnalysis,
+        nlpAnalysis,
+        expertVerification,
+        sourceReputation,
+        realTimeMonitoring,
+      ] = analyses;
       
       console.log('Advanced analysis complete:', {
         sriLanka: sriLankaAnalysis.totalScoreAdjustment,
@@ -472,9 +543,13 @@ export async function POST(request: NextRequest) {
         + sourceReputation.scoreAdjustment
         + realTimeMonitoring.scoreAdjustment;
       
-      // Strong debunk evidence increases fake score
+      // Evidence-weighted adjustments using link confidences
       if (debunkLinks.length > 0) {
-        adjustedScore = Math.min(1, adjustedScore + 0.2 + (debunkLinks.length * 0.05));
+        const debunkSum = debunkLinks.reduce((s, l) => s + (l.confidence ?? 0.7), 0);
+        const avgDebunk = debunkSum / debunkLinks.length;
+        const debunkEffect = 0.15 + (avgDebunk * 0.25); // stronger if fact-checks are high-confidence
+        adjustedScore = Math.min(1, adjustedScore + debunkEffect);
+        console.log('Applied debunk effect:', debunkEffect, 'avgDebunk:', avgDebunk);
       }
       
       // CRITICAL: Content from trusted Sri Lankan source directly should have STRONG credibility
@@ -501,9 +576,35 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Many support links with no debunks decreases fake score (more credible)
+      // Reduce fake score when there are many supporting sources
+      if (supportLinks.length > 0) {
+        const supportSum = supportLinks.reduce((s, l) => s + (l.confidence ?? 0.6), 0);
+        const avgSupport = supportSum / supportLinks.length;
+        
+        // Check if any support links are from highly trusted international sources
+        const internationalTrusted = ['bbc.com', 'bbc.co.uk', 'reuters.com', 'apnews.com', 'npr.org', 'cnn.com', 'theguardian.com', 'nytimes.com'];
+        const hasTrustedIntlSource = supportLinks.some(link => 
+          internationalTrusted.some(domain => (link.source || '').includes(domain))
+        );
+        
+        // CRITICAL FIX: If a highly trusted international news source reports it, give strong credibility
+        let supportEffect: number;
+        if (hasTrustedIntlSource) {
+          // Strong reduction for international trusted sources (BBC, Reuters, etc.)
+          supportEffect = 0.35 + (avgSupport * 0.25); // Up to 0.6 total reduction
+          console.log('Applied STRONG support effect (trusted intl source):', supportEffect);
+        } else {
+          // Normal reduction for other sources
+          supportEffect = 0.08 + (avgSupport * 0.22);
+          console.log('Applied support effect:', supportEffect, 'avgSupport:', avgSupport);
+        }
+        
+        adjustedScore = Math.max(0, adjustedScore - supportEffect);
+      }
+
+      // Additional bonus reduction when multiple supports and no debunks
       if (supportLinks.length >= 3 && debunkLinks.length === 0) {
-        adjustedScore = Math.max(0, adjustedScore - 0.15);
+        adjustedScore = Math.max(0, adjustedScore - 0.12);
       }
       
       // Recalculate verdict and confidence with adjusted score
@@ -519,7 +620,18 @@ export async function POST(request: NextRequest) {
         reasons.push('Limited verifiable sources found online for this claim');
       } else {
         if (supportLinks.length > 0) {
-          reasons.push(`Found ${supportLinks.length} source(s) from trusted news outlets`);
+          // Check for trusted international sources
+          const internationalTrusted = ['bbc.com', 'bbc.co.uk', 'reuters.com', 'apnews.com', 'npr.org', 'cnn.com', 'theguardian.com', 'nytimes.com'];
+          const trustedIntlSources = supportLinks.filter(link => 
+            internationalTrusted.some(domain => (link.source || '').includes(domain))
+          );
+          
+          if (trustedIntlSources.length > 0) {
+            const sourceNames = trustedIntlSources.map(l => l.source).join(', ');
+            reasons.push(`Reported by highly trusted international news sources: ${sourceNames}`);
+          } else {
+            reasons.push(`Found ${supportLinks.length} source(s) from trusted news outlets`);
+          }
         }
         if (debunkLinks.length > 0) {
           reasons.push(`Found ${debunkLinks.length} fact-checking article(s) addressing this claim`);
@@ -542,6 +654,12 @@ export async function POST(request: NextRequest) {
       let responseText = '';
       try {
         responseText = await generateClaimResponse(analysis, language);
+        
+        // Track Gemini API usage (non-blocking)
+        if (userId) {
+          trackApiUsage(userId, 'gemini').catch((e) => console.error('trackApiUsage(gemini) failed', e));
+        }
+        
         console.log('Gemini response received:', responseText.substring(0, 100));
       } catch (error) {
         console.error('Gemini error:', error);

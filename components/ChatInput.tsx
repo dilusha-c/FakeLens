@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Analysis } from '@/types';
-import { detectPersonalInfo, createPersonalInfoMessage } from '@/lib/personalInfoDetector';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -16,6 +15,7 @@ interface ChatInputProps {
 export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, disabled, hasAnalysis, currentAnalysis }: ChatInputProps) {
   const MIN_CHARACTERS = 15;
   const [input, setInput] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isSharing, setIsSharing] = useState(false);
@@ -23,11 +23,67 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
-  const [detectedInfo, setDetectedInfo] = useState<Array<{ type: string; value: string }> | null>(null);
-  const [showPersonalInfoWarning, setShowPersonalInfoWarning] = useState(false);
-
   const characterCount = input.trim().length;
   const isValidLength = characterCount >= MIN_CHARACTERS;
+
+  // Auto-save draft to localStorage
+  useEffect(() => {
+    if (input.trim()) {
+      const timer = setTimeout(() => {
+        localStorage.setItem('fakelens_draft', input);
+      }, 1000); // Save after 1 second of no typing
+      return () => clearTimeout(timer);
+    } else {
+      localStorage.removeItem('fakelens_draft');
+    }
+  }, [input]);
+
+  // Load draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('fakelens_draft');
+    if (savedDraft) {
+      setInput(savedDraft);
+    }
+  }, []);
+
+  // Handle paste event to capture images and documents from clipboard
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // First check for files (images and documents)
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      // Handle image paste
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          const namedFile = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
+          setSelectedImage(namedFile);
+        }
+        return;
+      }
+      
+      // Handle document paste (PDF, DOCX, TXT files)
+      if (item.type === 'application/pdf' || 
+          item.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+          item.type === 'text/plain') {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          const ext = item.type === 'application/pdf' ? '.pdf' : 
+                     item.type === 'text/plain' ? '.txt' : '.docx';
+          const namedFile = new File([file], `pasted-document-${Date.now()}${ext}`, { type: file.type });
+          setSelectedDocument(namedFile);
+          return;
+        }
+      }
+    }
+    
+    // Allow normal text paste to work (don't prevent default if no file found)
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,28 +96,13 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
       return; // Button is disabled, but extra safety check
     }
     
-    // Check for personal information
-    const detected = detectPersonalInfo(trimmedInput);
-    
-    if (detected.length > 0) {
-      setDetectedInfo(detected);
-      setShowPersonalInfoWarning(true);
-    } else {
-      onSend(trimmedInput);
-      setInput('');
-    }
-  };
-
-  const handleContinueWithInfo = () => {
-    onSend(input.trim());
+    onSend(trimmedInput);
     setInput('');
-    setDetectedInfo(null);
-    setShowPersonalInfoWarning(false);
-  };
-
-  const handleCancelMessage = () => {
-    setDetectedInfo(null);
-    setShowPersonalInfoWarning(false);
+    localStorage.removeItem('fakelens_draft'); // Clear saved draft
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height = 'auto';
+    }
   };
 
   const handleShare = async () => {
@@ -188,23 +229,23 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
 
   return (
     <>
-      <div className="border-t border-[var(--border-color)] bg-[var(--bg-primary)]">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+      <div className="bg-transparent">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           {/* Document Preview */}
           {selectedDocument && (
-            <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-xl">
+            <div className="mb-3 p-3 bg-white/5 border border-white/10 rounded-xl text-white">
               <div className="flex items-center gap-3">
                 <div className="flex-1 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-[var(--accent-green)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="text-sm text-purple-900 truncate">{selectedDocument.name}</span>
-                  <span className="text-xs text-purple-600">({(selectedDocument.size / 1024).toFixed(1)} KB)</span>
+                  <span className="text-sm text-white truncate">{selectedDocument.name}</span>
+                  <span className="text-xs text-white/70">({(selectedDocument.size / 1024).toFixed(1)} KB)</span>
                 </div>
                 <button
                   type="button"
                   onClick={removeSelectedDocument}
-                  className="p-1 hover:bg-purple-100 rounded-lg text-purple-600"
+                  className="p-1 hover:bg-white/10 rounded-lg text-white/70"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -215,7 +256,7 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
                 type="button"
                 onClick={handleDocumentUpload}
                 disabled={uploadingDocument}
-                className="mt-2 w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-2 w-full py-2 px-4 bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploadingDocument ? 'Analyzing Document...' : 'Analyze Document'}
               </button>
@@ -254,30 +295,43 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex items-end gap-2">
-            <div className="flex-1">
-              <div className="relative">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
-                  }}
-                  placeholder="Paste a news article, URL, or claim to verify..."
-                  disabled={disabled}
-                  className="w-full px-4 py-3 pr-12 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]"
-                  rows={1}
-                  style={{ minHeight: '52px', maxHeight: '200px' }}
-                />
-              </div>
-              {input && (
-                <div className={`mt-1 text-xs px-2 ${
-                  isValidLength 
-                    ? 'text-[var(--text-secondary)]' 
-                    : 'text-red-500 font-medium'
+          {/* Input Box Container */}
+          <div className="border border-[var(--border-color)] rounded-2xl p-3 bg-[var(--bg-secondary)]">
+            <form onSubmit={handleSubmit} className="flex items-center gap-2">
+              <div className="flex-1">
+                <div className="relative">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      // Auto-resize logic
+                      const ta = textareaRef.current;
+                      if (ta) {
+                        ta.style.height = 'auto';
+                        const newHeight = Math.min(ta.scrollHeight, 200);
+                        ta.style.height = `${newHeight}px`;
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
+                    onPaste={handlePaste}
+                    placeholder="Paste a news article, URL, image, or claim to verify..."
+                    disabled={disabled}
+                    className="w-full px-4 py-3 pr-12 bg-[var(--bg-primary)] border-0 rounded-xl resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]"
+                    rows={1}
+                    style={{ minHeight: '44px', maxHeight: '200px' }}
+                  />
+                </div>
+                {input && (
+                  <div className={`mt-1 text-xs px-2 ${
+                    isValidLength 
+                      ? 'text-[var(--text-secondary)]' 
+                      : 'text-red-500 font-medium'
                 }`}>
                   {isValidLength 
                     ? `${characterCount} characters`
@@ -341,67 +395,24 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
                 <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
 
-      {/* Personal Info Warning Modal */}
-      {showPersonalInfoWarning && detectedInfo && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                <span className="text-xl">⚠️</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Personal Information Detected</h3>
-            </div>
-
-            <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p className="text-sm text-gray-700 mb-3">I detected you mentioned:</p>
-              <ul className="space-y-2">
-                {detectedInfo.map((info, idx) => (
-                  <li key={idx} className="text-sm text-gray-700">
-                    <span className="font-medium">{info.type.charAt(0).toUpperCase() + info.type.slice(1)}:</span> {info.value}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <p className="text-sm text-gray-600 mb-6">
-              Would you like me to fact-check any information related to this?
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleCancelMessage}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleContinueWithInfo}
-                className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition font-medium text-sm"
-              >
-                Continue & Fact-Check
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Share Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Share Analysis</h3>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a2332] border border-white/10 rounded-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Share Analysis</h3>
             
             <div className="mb-6">
-              <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-white/5 border border-white/10 rounded-lg">
                 <input
                   type="text"
                   value={shareUrl}
                   readOnly
-                  className="flex-1 bg-transparent text-sm text-gray-700 outline-none"
+                  className="flex-1 bg-transparent text-sm text-white outline-none"
                 />
                 <button
                   onClick={copyToClipboard}
@@ -413,7 +424,7 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
             </div>
 
             <div className="mb-6">
-              <p className="text-sm text-gray-600 mb-3">Share via:</p>
+              <p className="text-sm text-white/80 mb-3">Share via:</p>
               <div className="flex gap-3">
                 <a
                   href={getWhatsAppUrl()}
@@ -444,7 +455,7 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
 
             <button
               onClick={() => setShowShareModal(false)}
-              className="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              className="w-full py-2 px-4 bg-white/10 text-white rounded-lg hover:bg-white/20"
             >
               Close
             </button>

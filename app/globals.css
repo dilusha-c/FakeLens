@@ -3,24 +3,24 @@
 @tailwind utilities;
 
 :root {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-tertiary: #2e2e2e;
+  --text-primary: #ececec;
+  --text-secondary: #b4b4b4;
+  --border-color: #3f3f3f;
+  --accent-green: #10a37f;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
+}
+
+.light {
   --bg-primary: #ffffff;
   --bg-secondary: #f7f7f8;
   --bg-tertiary: #ececf1;
   --text-primary: #0d0d0d;
   --text-secondary: #676767;
   --border-color: #d9d9e3;
-  --accent-green: #10a37f;
-  --accent-red: #ef4444;
-  --accent-yellow: #f59e0b;
-}
-
-.dark {
-  --bg-primary: #212121;
-  --bg-secondary: #2f2f2f;
-  --bg-tertiary: #3f3f3f;
-  --text-primary: #ececec;
-  --text-secondary: #b4b4b4;
-  --border-color: #4e4e4e;
 }
 
 body {
@@ -35,4 +35,19 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }

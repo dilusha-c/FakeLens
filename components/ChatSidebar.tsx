@@ -8,6 +8,9 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   onSelectChat: (chatId: string) => void;
   onDeleteChat: (chatId: string) => void;
+  onToggleSidebar?: () => void;
+  isSidebarOpen?: boolean;
+  isLoading?: boolean;
 }
 
 export default function ChatSidebar({
@@ -16,15 +19,34 @@ export default function ChatSidebar({
   onNewChat,
   onSelectChat,
   onDeleteChat,
+  onToggleSidebar,
+  isLoading = false,
 }: ChatSidebarProps) {
   return (
     <div className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-[var(--border-color)]">
-        <h1 className="text-xl font-bold text-[var(--text-primary)]">FakeLens</h1>
-        <p className="text-xs text-[var(--text-secondary)] mt-1">Fact-Checking Assistant</p>
-      </div>
-
+      {/* Top bar: logo (opens new chat) + close sidebar button */}
+      {onToggleSidebar && (
+        <div className="h-16 px-4 flex items-center justify-between border-b border-[var(--border-color)]">
+          <button
+            onClick={onNewChat}
+            className="p-1 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors flex-shrink-0"
+            title="New chat"
+          >
+            <img
+              src="/logo.svg"
+              alt="FakeLens logo"
+              className="max-w-8 max-h-8"
+            />
+          </button>
+          <button
+            onClick={() => onToggleSidebar && onToggleSidebar()}
+            className="p-2 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)]"
+            title="Close sidebar"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* New Chat Button */}
       <div className="p-3">
         <button
@@ -40,7 +62,19 @@ export default function ChatSidebar({
 
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {chats.map(chat => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-green)] mx-auto mb-2"></div>
+              <p className="text-sm text-[var(--text-secondary)]">Loading history...</p>
+            </div>
+          </div>
+        ) : chats.length === 0 ? (
+          <div className="flex items-center justify-center py-8 px-4">
+            <p className="text-sm text-[var(--text-secondary)] text-center">No chats yet. Start a new conversation!</p>
+          </div>
+        ) : (
+          chats.map(chat => (
           <div
             key={chat.id}
             className={`group relative px-3 py-2 mx-2 my-1 rounded-lg cursor-pointer transition-colors ${
@@ -74,7 +108,8 @@ export default function ChatSidebar({
               </button>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Footer */}
