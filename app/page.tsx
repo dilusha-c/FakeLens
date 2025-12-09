@@ -12,6 +12,8 @@ export default function Home() {
   const router = useRouter();
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [pendingNewChat, setPendingNewChat] = useState(false);
+  const [pendingTempId, setPendingTempId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -37,9 +39,26 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           setChats(data.chats || []);
-          if (data.chats?.length > 0) {
-            setCurrentChatId(data.chats[0].id);
+
+          // If a chatId is present in the URL, select it.
+          // Otherwise open a pending (unsaved) chat in the UI — do NOT
+          // add it to the sidebar history until the user sends the
+          // first message.
+          let urlChatId: string | null = null;
+          if (typeof window !== 'undefined') {
+            const sp = new URLSearchParams(window.location.search);
+            urlChatId = sp.get('chatId');
           }
+          if (urlChatId) {
+            setCurrentChatId(urlChatId);
+          } else {
+            const tempId = `temp-${Date.now().toString(36)}`;
+            setPendingNewChat(true);
+            setPendingTempId(tempId);
+            setCurrentChatId(tempId);
+            try { router.replace(`/?chatId=${tempId}`); } catch (e) {}
+          }
+
         } else if (res.status === 401) {
           router.push('/auth/login');
         }
@@ -69,29 +88,29 @@ export default function Home() {
   const currentChat = chats.find(chat => chat.id === currentChatId);
 
   const createNewChat = async () => {
-    try {
-      const res = await fetch('/api/chats', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: 'New Chat',
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setChats([data.chat, ...chats]);
-        setCurrentChatId(data.chat.id);
-      }
-    } catch (error) {
-      console.error('Failed to create chat:', error);
-    }
+    // Create a pending local chat. It will be persisted to the server
+    // only after the user sends the first message.
+    const tempId = `temp-${Date.now().toString(36)}`;
+    setPendingNewChat(true);
+    setPendingTempId(tempId);
+    setCurrentChatId(tempId);
+    try { router.replace(`/?chatId=${tempId}`); } catch (e) {}
   };
 
   const selectChat = (chatId: string) => {
+    // If there was a pending new chat and user selects another chat,
+    // discard the pending chat (it was never persisted).
+    if (pendingNewChat && pendingTempId && chatId !== pendingTempId) {
+      setPendingNewChat(false);
+      setPendingTempId(null);
+    }
     setCurrentChatId(chatId);
+    // Update URL when selecting a chat
+    try {
+      router.replace(`/?chatId=${chatId}`);
+    } catch (e) {
+      // ignore
+    }
   };
 
   const deleteChat = async (chatId: string) => {
@@ -107,7 +126,16 @@ export default function Home() {
     setChats(updatedChats);
     
     if (currentChatId === chatId) {
-      setCurrentChatId(updatedChats.length > 0 ? updatedChats[0].id : null);
+      const newCurrent = updatedChats.length > 0 ? updatedChats[0].id : null;
+      setCurrentChatId(newCurrent);
+      // Update URL when current chat changes due to deletion
+      try {
+        if (newCurrent) {
+          router.replace(`/?chatId=${newCurrent}`);
+        } else {
+          router.replace(`/`);
+        }
+      } catch (e) {}
     }
   };
 
@@ -116,6 +144,32 @@ export default function Home() {
 
     let chatToUpdate = currentChat;
     let chatId = currentChatId;
+
+    // If there's a pending (local) chat, persist it now using the first
+    // message as the title and add it to the sidebar. Otherwise, if no
+    // chat exists, create one as before.
+    if (pendingNewChat && pendingTempId) {
+      try {
+        const createRes = await fetch('/api/chats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: content.substring(0, 50) }),
+        });
+        if (createRes.ok) {
+          const data = await createRes.json();
+          chatToUpdate = data.chat;
+          chatId = data.chat.id;
+          setChats(prev => [data.chat, ...prev]);
+          setCurrentChatId(data.chat.id);
+          setPendingNewChat(false);
+          setPendingTempId(null);
+          try { router.replace(`/?chatId=${data.chat.id}`); } catch (e) {}
+        }
+      } catch (error) {
+        console.error('Error creating chat:', error);
+        return;
+      }
+    }
 
     // Create new chat if none exists
     if (!chatToUpdate) {
@@ -266,6 +320,30 @@ export default function Home() {
     let chatToUpdate = currentChat;
     let chatId = currentChatId;
     
+    // If there's a pending new chat, persist it first
+    if (pendingNewChat && pendingTempId) {
+      try {
+        const createRes = await fetch('/api/chats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: '📸 Image Analysis' }),
+        });
+        if (createRes.ok) {
+          const data = await createRes.json();
+          chatToUpdate = data.chat;
+          chatId = data.chat.id;
+          setChats(prev => [data.chat, ...prev]);
+          setCurrentChatId(data.chat.id);
+          setPendingNewChat(false);
+          setPendingTempId(null);
+          try { router.replace(`/?chatId=${data.chat.id}`); } catch (e) {}
+        }
+      } catch (error) {
+        console.error('Error creating chat for image upload:', error);
+        return;
+      }
+    }
+
     // Create new chat if none exists
     if (!chatToUpdate) {
       try {
