@@ -909,12 +909,8 @@ export default function Home() {
           <ChatHeader
             chatTitle={currentChat?.title || 'New Chat'}
             chatId={currentChatId || undefined}
-            isShared={currentChat?.isShared || false}
-            shareUrl={currentShareUrl}
             userName={user?.name || user?.email}
             guestCredits={guestCredits}
-            onShare={handleShareChat}
-            onUnshare={handleUnshareChat}
             onToggleSidebar={toggleSidebar}
             isSidebarOpen={sidebarOpen}
           />

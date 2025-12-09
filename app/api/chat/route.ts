@@ -483,7 +483,7 @@ export async function POST(request: NextRequest) {
       
       // Add Sri Lankan rumor pattern detection results
       if (sriLankaAnalysis.details.rumorPatterns.detectedPatterns.length > 0) {
-        sriLankaAnalysis.details.rumorPatterns.detectedPatterns.forEach(pattern => {
+        sriLankaAnalysis.details.rumorPatterns.detectedPatterns.forEach((pattern: string) => {
           detectionReasons.push(pattern);
         });
       }
@@ -506,25 +506,25 @@ export async function POST(request: NextRequest) {
       }
       
       // Add NLP warnings
-      nlpAnalysis.warnings.forEach(warning => detectionReasons.push(warning));
+      nlpAnalysis.warnings.forEach((warning: string) => detectionReasons.push(warning));
       
       // Add expert verification results
       if (expertVerification.factCheckers.length > 0) {
-        const falseChecks = expertVerification.factCheckers.filter(fc => fc.verdict === 'false');
+        const falseChecks = expertVerification.factCheckers.filter((fc: any) => fc.verdict === 'false');
         if (falseChecks.length > 0) {
           detectionReasons.push(
-            `Debunked by ${falseChecks.length} professional fact-checker(s): ${falseChecks.map(fc => fc.source).join(', ')}`
+            `Debunked by ${falseChecks.length} professional fact-checker(s): ${falseChecks.map((fc: any) => fc.source).join(', ')}`
           );
         }
       }
       if (expertVerification.expertOpinions.length > 0) {
-        expertVerification.expertOpinions.forEach(opinion => {
+        expertVerification.expertOpinions.forEach((opinion: any) => {
           detectionReasons.push(`${opinion.expert}: ${opinion.opinion}`);
         });
       }
       
       // Add source reputation warnings
-      sourceReputation.warnings.forEach(warning => detectionReasons.push(warning));
+      sourceReputation.warnings.forEach((warning: string) => detectionReasons.push(warning));
       
       // Add real-time monitoring recommendations
       if (realTimeMonitoring.hasOfficialStatement) {
