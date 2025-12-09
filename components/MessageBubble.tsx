@@ -2,6 +2,7 @@
 
 import { Message } from '@/types';
 import ImageAnalysisCard from './ImageAnalysisCard';
+import DocumentAnalysisCard from './DocumentAnalysisCard';
 
 interface MessageBubbleProps {
   message: Message;
@@ -43,6 +44,28 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               {message.content}
             </div>
           </div>
+        ) : message.documentPreview ? (
+          // Document Preview Display (User Upload)
+          <div className={`rounded-2xl p-4 ${
+            isUser
+              ? 'bg-blue-500 text-white ml-auto'
+              : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
+          }`}>
+            <div className="flex items-center gap-2 text-sm mb-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <div>
+                <div className="font-medium">{message.documentPreview.name}</div>
+                <div className="text-xs opacity-75">
+                  {(message.documentPreview.size / 1024).toFixed(1)} KB • {message.documentPreview.type}
+                </div>
+              </div>
+            </div>
+            <div className="whitespace-pre-wrap break-words">
+              {message.content}
+            </div>
+          </div>
         ) : message.imageAnalysis ? (
           // Image Analysis Display
           <div className="w-full">
@@ -59,6 +82,20 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               imageData={message.imageAnalysis}
               textAnalysis={undefined}
             />
+          </div>
+        ) : message.documentAnalysis ? (
+          // Document Analysis Display
+          <div className="w-full">
+            <div className={`rounded-2xl p-3 mb-2 ${
+              isUser
+                ? 'bg-blue-500 text-white ml-auto'
+                : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'
+            }`}>
+              <div className="whitespace-pre-wrap break-words">
+                {message.content}
+              </div>
+            </div>
+            <DocumentAnalysisCard data={message.documentAnalysis} />
           </div>
         ) : (
           // Regular Text Message

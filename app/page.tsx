@@ -462,6 +462,174 @@ export default function Home() {
     }
   };
 
+  const handleDocumentUpload = async (documentData: any, documentFile: File) => {
+    let chatToUpdate = currentChat;
+    let chatId = currentChatId;
+    
+    // If there's a pending new chat, persist it first
+    if (pendingNewChat && pendingTempId) {
+      try {
+        const createRes = await fetch('/api/chats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: '📄 Document Analysis' }),
+        });
+        if (createRes.ok) {
+          const data = await createRes.json();
+          chatToUpdate = data.chat;
+          chatId = data.chat.id;
+          setChats(prev => [data.chat, ...prev]);
+          setCurrentChatId(data.chat.id);
+          setPendingNewChat(false);
+          setPendingTempId(null);
+          try { router.replace(`/?chatId=${data.chat.id}`); } catch (e) {}
+        }
+      } catch (error) {
+        console.error('Error creating chat for document upload:', error);
+        return;
+      }
+    }
+
+    // Create new chat if none exists
+    if (!chatToUpdate) {
+      try {
+        const res = await fetch('/api/chats', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: '📄 Document Analysis',
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          chatToUpdate = data.chat;
+          chatId = data.chat.id;
+          setChats(prev => [data.chat, ...prev]);
+          setCurrentChatId(data.chat.id);
+        } else {
+          throw new Error('Failed to create chat');
+        }
+      } catch (error) {
+        console.error('Error creating chat:', error);
+        return;
+      }
+    }
+
+    // Add user message with document to server
+    try {
+      await fetch(`/api/chats/${chatId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: `📄 Uploaded document: ${documentFile.name}`,
+          documentMetadata: JSON.stringify({
+            name: documentFile.name,
+            size: documentFile.size,
+            type: documentFile.type,
+          }),
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save document message:', error);
+    }
+
+    const userDocumentMessage: Message = {
+      role: 'user',
+      content: `📄 Uploaded document: ${documentFile.name}`,
+      documentPreview: {
+        name: documentFile.name,
+        size: documentFile.size,
+        type: documentFile.type,
+      },
+    };
+
+    // Add user message to chat
+    setChats(prev => prev.map(chat =>
+      chat.id === chatId
+        ? { 
+            ...chat, 
+            messages: [...chat.messages, userDocumentMessage],
+            title: chat.title === 'New Chat' ? '📄 Document Analysis' : chat.title
+          }
+        : chat
+    ));
+
+    // Analyze the document text
+    if (documentData.text && documentData.text.length > 15) {
+      setIsLoading(true);
+
+      try {
+        // Get AI analysis for document content
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: [...(chatToUpdate?.messages || []), { role: 'user', content: documentData.text }],
+            analysis: chatToUpdate?.analysis,
+          }),
+        });
+
+        if (response.ok) {
+          const analysisResult = await response.json();
+
+          // Create document analysis message with full data
+          const documentAnalysisData = {
+            ...documentData,
+            analysis: analysisResult.analysis,
+          };
+
+          const assistantDocumentMessage: Message = {
+            role: 'assistant',
+            content: '📄 Document Analysis Complete',
+            documentAnalysis: documentAnalysisData,
+          };
+
+          // Save assistant message with analysis
+          try {
+            await fetch(`/api/chats/${chatId}/messages`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                role: 'assistant',
+                content: '📄 Document Analysis Complete',
+                factCheck: analysisResult.analysis ? JSON.stringify(analysisResult.analysis) : null,
+                documentMetadata: JSON.stringify(documentData.metadata),
+                contentAnalysis: JSON.stringify(documentData),
+              }),
+            });
+          } catch (error) {
+            console.error('Failed to save document analysis:', error);
+          }
+
+          // Update chat with analysis
+          setChats(prev => prev.map(chat =>
+            chat.id === chatId
+              ? { 
+                  ...chat, 
+                  messages: [...chat.messages, assistantDocumentMessage],
+                  analysis: analysisResult.analysis || chat.analysis,
+                }
+              : chat
+          ));
+        }
+      } catch (error) {
+        console.error('Error analyzing document:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   if (isLoadingChats) {
     return (
       <div className="flex h-screen items-center justify-center bg-[var(--bg-primary)]">
@@ -559,6 +727,7 @@ export default function Home() {
         <ChatInput
           onSend={sendMessage}
           onImageUpload={handleImageUpload}
+          onDocumentUpload={handleDocumentUpload}
           disabled={isLoading}
           hasAnalysis={!!currentChat?.analysis}
           currentAnalysis={currentChat?.analysis}

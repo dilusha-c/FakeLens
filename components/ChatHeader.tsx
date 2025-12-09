@@ -45,9 +45,7 @@ export default function ChatHeader({
   };
 
   return (
-    <div className="border-b border-gray-200 bg-white p-4 flex items-center justify-between">
-      <h1 className="text-2xl font-bold text-gray-800">{chatTitle}</h1>
-
+    <div className="border-b border-gray-200 bg-white p-4 flex items-center justify-end">
       <div className="flex items-center gap-4">
         {/* Share Button */}
         <div className="relative">

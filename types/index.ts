@@ -30,12 +30,32 @@ export interface ImageAnalysisData {
   };
 }
 
+export interface DocumentAnalysisData {
+  text: string;
+  metadata: {
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    pageCount?: number;
+    wordCount: number;
+    charCount: number;
+  };
+  extractedAt: string;
+  analysis?: Analysis;
+}
+
 export interface Message {
   role: MessageRole;
   content: string;
   analysis?: Analysis;
   imageAnalysis?: ImageAnalysisData;
+  documentAnalysis?: DocumentAnalysisData;
   imagePreview?: {
+    name: string;
+    size: number;
+    type: string;
+  };
+  documentPreview?: {
     name: string;
     size: number;
     type: string;
