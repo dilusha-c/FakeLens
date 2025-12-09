@@ -230,22 +230,23 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
   return (
     <>
       <div className="bg-transparent">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           {/* Document Preview */}
           {selectedDocument && (
-            <div className="mb-3 p-3 bg-white/5 border border-white/10 rounded-xl text-white">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-[var(--accent-green)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mb-2 sm:mb-3 p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-xl text-white">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex-1 flex items-center gap-2 min-w-0">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--accent-green)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="text-sm text-white truncate">{selectedDocument.name}</span>
-                  <span className="text-xs text-white/70">({(selectedDocument.size / 1024).toFixed(1)} KB)</span>
+                  <span className="text-xs sm:text-sm text-white truncate">{selectedDocument.name}</span>
+                  <span className="text-xs text-white/70 flex-shrink-0">({(selectedDocument.size / 1024).toFixed(1)} KB)</span>
                 </div>
                 <button
                   type="button"
                   onClick={removeSelectedDocument}
-                  className="p-1 hover:bg-white/10 rounded-lg text-white/70"
+                  className="p-1.5 sm:p-1 hover:bg-white/10 rounded-lg text-white/70 touch-manipulation flex-shrink-0"
+                  aria-label="Remove document"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -256,7 +257,7 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
                 type="button"
                 onClick={handleDocumentUpload}
                 disabled={uploadingDocument}
-                className="mt-2 w-full py-2 px-4 bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-2 w-full py-2.5 sm:py-2 px-4 bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90 text-white rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               >
                 {uploadingDocument ? 'Analyzing Document...' : 'Analyze Document'}
               </button>
@@ -265,19 +266,20 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
 
           {/* Image Preview */}
           {selectedImage && (
-            <div className="mb-3 p-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-[var(--accent-green)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mb-2 sm:mb-3 p-2.5 sm:p-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex-1 flex items-center gap-2 min-w-0">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--accent-green)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-sm text-[var(--text-primary)] truncate">{selectedImage.name}</span>
-                  <span className="text-xs text-[var(--text-secondary)]">({(selectedImage.size / 1024).toFixed(1)} KB)</span>
+                  <span className="text-xs sm:text-sm text-[var(--text-primary)] truncate">{selectedImage.name}</span>
+                  <span className="text-xs text-[var(--text-secondary)] flex-shrink-0">({(selectedImage.size / 1024).toFixed(1)} KB)</span>
                 </div>
                 <button
                   type="button"
                   onClick={removeSelectedImage}
-                  className="p-1 hover:bg-[var(--bg-tertiary)] rounded-lg text-[var(--text-secondary)]"
+                  className="p-1.5 sm:p-1 hover:bg-[var(--bg-tertiary)] rounded-lg text-[var(--text-secondary)] touch-manipulation flex-shrink-0"
+                  aria-label="Remove image"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -288,7 +290,7 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
                 type="button"
                 onClick={handleImageUpload}
                 disabled={uploadingImage}
-                className="mt-2 w-full py-2 px-4 bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-2 w-full py-2.5 sm:py-2 px-4 bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90 text-white rounded-lg text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               >
                 {uploadingImage ? 'Analyzing Image...' : 'Analyze Image'}
               </button>
@@ -296,9 +298,9 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
           )}
 
           {/* Input Box Container */}
-          <div className="border border-[var(--border-color)] rounded-2xl p-3 bg-[var(--bg-secondary)]">
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
-              <div className="flex-1">
+          <div className="border border-[var(--border-color)] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 bg-[var(--bg-secondary)]">
+            <form onSubmit={handleSubmit} className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex-1 min-w-0">
                 <div className="relative">
                   <textarea
                     ref={textareaRef}
@@ -322,7 +324,7 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
                     onPaste={handlePaste}
                     placeholder="Paste a news article, URL, image, or claim to verify..."
                     disabled={disabled}
-                    className="w-full px-4 py-3 pr-12 bg-[var(--bg-primary)] border-0 rounded-xl resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-[var(--bg-primary)] border-0 rounded-lg sm:rounded-xl resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)] text-sm sm:text-base text-[var(--text-primary)] placeholder-[var(--text-secondary)]"
                     rows={1}
                     style={{ minHeight: '44px', maxHeight: '200px' }}
                   />
@@ -335,19 +337,20 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
                 }`}>
                   {isValidLength 
                     ? `${characterCount} characters`
-                    : `Minimum ${MIN_CHARACTERS} characters required (${characterCount}/${MIN_CHARACTERS})`
+                    : `Min ${MIN_CHARACTERS} chars (${characterCount}/${MIN_CHARACTERS})`
                   }
                 </div>
               )}
             </div>
 
             <label
-              className={`p-3 rounded-xl transition-colors cursor-pointer ${
+              className={`p-2.5 sm:p-3 rounded-lg sm:rounded-xl transition-colors cursor-pointer touch-manipulation flex-shrink-0 ${
                 disabled || uploadingImage
                   ? 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] cursor-not-allowed opacity-50'
                   : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
               }`}
               title="Upload image"
+              aria-label="Upload image"
             >
               <input
                 type="file"
@@ -362,12 +365,13 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
             </label>
 
             <label
-              className={`p-3 rounded-xl transition-colors cursor-pointer ${
+              className={`p-2.5 sm:p-3 rounded-lg sm:rounded-xl transition-colors cursor-pointer touch-manipulation flex-shrink-0 ${
                 disabled || uploadingDocument
                   ? 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] cursor-not-allowed opacity-50'
                   : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
               }`}
               title="Upload document (PDF, DOCX, TXT)"
+              aria-label="Upload document"
             >
               <input
                 type="file"
@@ -376,7 +380,7 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
                 disabled={disabled || uploadingDocument}
                 className="hidden"
               />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </label>
@@ -384,14 +388,15 @@ export default function ChatInput({ onSend, onImageUpload, onDocumentUpload, dis
             <button
               type="submit"
               disabled={disabled || !isValidLength}
-              className={`p-3 rounded-xl transition-colors ${
+              className={`p-2.5 sm:p-3 rounded-lg sm:rounded-xl transition-all touch-manipulation flex-shrink-0 ${
                 !disabled && isValidLength
-                  ? 'bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90 text-white'
+                  ? 'bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90 text-white active:scale-95'
                   : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] cursor-not-allowed'
               }`}
-              title={!isValidLength ? `Minimum ${MIN_CHARACTERS} characters required` : 'Send message'}
+              title={!isValidLength ? `Min ${MIN_CHARACTERS} chars required` : 'Send message'}
+              aria-label="Send message"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>

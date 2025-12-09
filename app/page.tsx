@@ -870,40 +870,61 @@ export default function Home() {
 
   return (
     <div className="h-screen overflow-hidden bg-gradient-to-br from-[#0b1224] via-[#0c1831] to-[#090f1a] text-white">
-      <div className="flex h-full">
-        {sidebarOpen ? (
-          <ChatSidebar
-            chats={chats}
-            currentChatId={currentChatId}
-            onNewChat={createNewChat}
-            onSelectChat={selectChat}
-            onDeleteChat={deleteChat}
-            isLoading={isLoadingChats}
-            onToggleSidebar={toggleSidebar}
-            isSidebarOpen={sidebarOpen}
+      <div className="flex h-full relative">
+        {/* Mobile overlay backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={toggleSidebar}
+            aria-label="Close sidebar"
           />
-        ) : (
-          <div className="w-16 h-full bg-white/5 border-r border-white/10 flex flex-col items-center py-3 gap-3 backdrop-blur-xl">
-            <button
-              onClick={createNewChat}
-              className="p-2 rounded-md hover:bg-white/10 transition-colors"
-              title="New chat"
-            >
-              <img
-                src="/logo.svg"
-                alt="FakeLens logo"
-                className="max-w-8 max-h-8"
-              />
-            </button>
-            <button
-              onClick={toggleSidebar}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-              title="Open sidebar"
-            >
-              ☰
-            </button>
-          </div>
         )}
+
+        {/* Sidebar - mobile drawer on small screens, fixed on desktop */}
+        <div className={`
+          fixed md:relative inset-y-0 left-0 z-50 md:z-0
+          transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          ${sidebarOpen ? 'md:block' : 'hidden md:block'}
+        `}>
+          {sidebarOpen ? (
+            <ChatSidebar
+              chats={chats}
+              currentChatId={currentChatId}
+              onNewChat={createNewChat}
+              onSelectChat={selectChat}
+              onDeleteChat={deleteChat}
+              isLoading={isLoadingChats}
+              onToggleSidebar={toggleSidebar}
+              isSidebarOpen={sidebarOpen}
+            />
+          ) : (
+            <div className="hidden md:flex w-14 lg:w-16 h-full bg-white/5 border-r border-white/10 flex-col items-center py-3 gap-3 backdrop-blur-xl">
+              <button
+                onClick={createNewChat}
+                className="p-2 rounded-md hover:bg-white/10 transition-colors touch-manipulation"
+                title="New chat"
+                aria-label="New chat"
+              >
+                <img
+                  src="/logo.svg"
+                  alt="FakeLens logo"
+                  className="w-7 h-7 lg:w-8 lg:h-8"
+                />
+              </button>
+              <button
+                onClick={toggleSidebar}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors touch-manipulation"
+                title="Open sidebar"
+                aria-label="Open sidebar"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="flex-1 flex flex-col min-h-0">
           <ChatHeader

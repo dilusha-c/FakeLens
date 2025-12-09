@@ -89,44 +89,44 @@ export default function ResultCard({ analysis }: ResultCardProps) {
     : 'Uncertain';
 
   return (
-    <div className={`mt-4 max-w-[80%] bg-gradient-to-br from-[#131522] to-[#0e1724] border border-white/10 rounded-2xl p-6 shadow-sm transition-all duration-500 ${isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+    <div className={`mt-3 sm:mt-4 w-full sm:max-w-[80%] bg-gradient-to-br from-[#131522] to-[#0e1724] border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm transition-all duration-500 ${isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
       {/* Header with Icon */}
-      <div className="flex items-start gap-3 mb-4">
-        <div className="p-2 bg-white/5 rounded-lg">
-          <svg className="w-6 h-6 text-[var(--accent-green)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <div className="p-1.5 sm:p-2 bg-white/5 rounded-lg flex-shrink-0">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--accent-green)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-white mb-1">📊 Content Analysis Result</h3>
-          <p className="text-sm text-white/70">AI-powered fact-checking and verification</p>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-bold text-white mb-0.5 sm:mb-1">📊 Content Analysis</h3>
+          <p className="text-xs sm:text-sm text-white/70">AI-powered fact-checking</p>
         </div>
       </div>
 
       {/* Verdict Badge */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${colors.badge} shadow-sm transition-all duration-300 ${isRevealed ? 'scale-100' : 'scale-0'}`}>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <span className={`px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${colors.badge} shadow-sm transition-all duration-300 ${isRevealed ? 'scale-100' : 'scale-0'}`}>
           {verdictLabel}
         </span>
-        <span className={`text-sm font-medium ${colors.text} transition-all duration-500 delay-100 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
+        <span className={`text-xs sm:text-sm font-medium ${colors.text} transition-all duration-500 delay-100 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
           {animatedConfidence}% confidence
         </span>
       </div>
 
       {/* Verdict Indicator */}
-      <div className={`mb-4 p-3 bg-white/5 rounded-lg border border-white/10 transition-all duration-500 delay-200 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-white/80">Verdict Assessment</span>
-          <span className={`text-lg font-bold ${colors.icon}`}>
+      <div className={`mb-3 sm:mb-4 p-2.5 sm:p-3 bg-white/5 rounded-lg border border-white/10 transition-all duration-500 delay-200 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="flex items-center justify-between mb-2 gap-2">
+          <span className="text-xs sm:text-sm font-medium text-white/80">Verdict</span>
+          <span className={`text-sm sm:text-lg font-bold ${colors.icon} text-right`}>
             {verdict === 'fake' ? '⚠️ Likely False' : 
              verdict === 'real' ? '✓ Likely True' :
-             verdict === 'unanalyzable' ? 'ℹ️ Cannot be analyzed' :
+             verdict === 'unanalyzable' ? 'ℹ️ Cannot analyze' :
              '? Uncertain'}
           </span>
         </div>
-        <div className="w-full bg-white/10 rounded-full h-3">
+        <div className="w-full bg-white/10 rounded-full h-2.5 sm:h-3">
           <div
-            className={`h-3 rounded-full ${colors.bar} transition-all duration-1000 ease-out`}
+            className={`h-2.5 sm:h-3 rounded-full ${colors.bar} transition-all duration-1000 ease-out`}
             style={{ width: isRevealed ? `${fakeLikelihood}%` : '0%' }}
           />
         </div>
@@ -138,13 +138,13 @@ export default function ResultCard({ analysis }: ResultCardProps) {
 
       {/* Reasons */}
       {reasons.length > 0 && (
-        <div className={`mb-4 p-3 bg-white/5 rounded-lg border border-white/10 transition-all duration-500 delay-300 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
-          <h4 className="text-sm font-semibold text-white mb-3">🔍 Analysis Reasons</h4>
-          <ul className="space-y-2">
+        <div className={`mb-3 sm:mb-4 p-2.5 sm:p-3 bg-white/5 rounded-lg border border-white/10 transition-all duration-500 delay-300 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
+          <h4 className="text-xs sm:text-sm font-semibold text-white mb-2 sm:mb-3">🔍 Analysis Reasons</h4>
+          <ul className="space-y-1.5 sm:space-y-2">
             {reasons.map((reason, index) => (
               <li 
                 key={index} 
-                className={`flex items-start gap-2 text-sm text-white/90 transition-all duration-300`}
+                className={`flex items-start gap-2 text-xs sm:text-sm text-white/90 transition-all duration-300`}
                 style={{ 
                   transitionDelay: `${400 + (index * 100)}ms`,
                   opacity: isRevealed ? 1 : 0,
@@ -161,26 +161,26 @@ export default function ResultCard({ analysis }: ResultCardProps) {
 
       {/* Evidence Links */}
       {(supportLinks.length > 0 || debunkLinks.length > 0) && (
-        <div className={`space-y-3 transition-all duration-500 delay-500 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`space-y-2 sm:space-y-3 transition-all duration-500 delay-500 ${isRevealed ? 'opacity-100' : 'opacity-0'}`}>
           {supportLinks.length > 0 && (
-            <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-              <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+            <div className="p-2.5 sm:p-3 bg-white/5 rounded-lg border border-white/10">
+              <h4 className="text-xs sm:text-sm font-semibold text-white mb-2 flex items-center gap-2">
                 <span className="text-green-400">✓</span>
                 Supporting Sources
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {supportLinks.map((link, index) => (
                   <a
                     key={index}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block p-2 bg-white/5 rounded-lg border border-white/10 hover:border-green-400/50 hover:bg-white/10 transition-all"
+                    className="block p-2 sm:p-2.5 bg-white/5 rounded-lg border border-white/10 hover:border-green-400/50 hover:bg-white/10 transition-all touch-manipulation"
                   >
-                    <p className="text-sm font-medium text-white line-clamp-2">
+                    <p className="text-xs sm:text-sm font-medium text-white line-clamp-2">
                       {link.title}
                     </p>
-                    <p className="text-xs text-white/70 mt-1">{link.source}</p>
+                    <p className="text-xs text-white/70 mt-0.5 sm:mt-1 truncate">{link.source}</p>
                   </a>
                 ))}
               </div>
@@ -188,25 +188,25 @@ export default function ResultCard({ analysis }: ResultCardProps) {
           )}
 
           {debunkLinks.length > 0 && (
-            <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-              <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+            <div className="p-2.5 sm:p-3 bg-white/5 rounded-lg border border-white/10">
+              <h4 className="text-xs sm:text-sm font-semibold text-white mb-2 flex items-center gap-2">
                 <span className="text-blue-300">ℹ️</span>
                 Fact Checks & Debunking Sources
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {debunkLinks.map((link, index) => (
                   <a
                     key={index}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block p-2 bg-white/5 rounded-lg border border-white/10 hover:border-blue-300/50 hover:bg-white/10 transition-all"
+                    className="block p-2 sm:p-2.5 bg-white/5 rounded-lg border border-white/10 hover:border-blue-300/50 hover:bg-white/10 transition-all touch-manipulation"
                   >
-                    <p className="text-sm font-medium text-white line-clamp-2">
+                    <p className="text-xs sm:text-sm font-medium text-white line-clamp-2">
                       {link.title}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-white/70">{link.source}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
+                      <p className="text-xs text-white/70 truncate max-w-[60%]">{link.source}</p>
                       {link.rating && (
                         <>
                           <span className="text-xs text-white/40">•</span>
@@ -225,9 +225,9 @@ export default function ResultCard({ analysis }: ResultCardProps) {
       )}
 
       {/* Disclaimer */}
-      <div className="mt-4 pt-3 border-t border-white/10">
-        <p className="text-xs text-white/60 italic flex items-start gap-2">
-          <span className="text-white/40">⚠️</span>
+      <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-white/10">
+        <p className="text-xs text-white/60 italic flex items-start gap-1.5 sm:gap-2">
+          <span className="text-white/40 flex-shrink-0">⚠️</span>
           <span>This is an automated estimation. Please verify with official sources and use critical thinking.</span>
         </p>
       </div>

@@ -40,58 +40,58 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#020617] via-[#0a1645] to-[#1d2f5d] flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_20px_50px_rgba(2,12,27,0.65)] overflow-hidden flex flex-col lg:flex-row">
-        <div className="flex-1 bg-gradient-to-br from-[#111b40] to-[#0b1630] p-10 text-white">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-300">
-              <span className="h-2.5 w-2.5 rounded-full bg-indigo-400" />
+    <div className="min-h-screen bg-gradient-to-br from-[#020617] via-[#0a1645] to-[#1d2f5d] flex items-center justify-center p-3 sm:p-4">
+      <div className="w-full max-w-5xl bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_20px_50px_rgba(2,12,27,0.65)] overflow-hidden flex flex-col lg:flex-row">
+        <div className="flex-1 bg-gradient-to-br from-[#111b40] to-[#0b1630] p-6 sm:p-8 lg:p-10 text-white">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.3em] text-indigo-300">
+              <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-indigo-400" />
               Facts First
             </div>
             <div>
-              <h1 className="text-3xl font-bold leading-tight">Welcome back to FakeLens</h1>
-              <p className="text-sm text-indigo-200/80 mt-3 max-w-sm">
+              <h1 className="text-2xl sm:text-3xl font-bold leading-tight">Welcome back to FakeLens</h1>
+              <p className="text-xs sm:text-sm text-indigo-200/80 mt-2 sm:mt-3 max-w-sm">
                 Continue fact-checking claims, images, and uploads with precision and a single workspace tailored for curious minds.
               </p>
             </div>
-            <div className="bg-white/10 p-4 rounded-2xl border border-white/20 text-sm text-indigo-100">
+            <div className="bg-white/10 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/20 text-xs sm:text-sm text-indigo-100">
               <p className="font-semibold text-white">Helping you avoid fake news with confidence</p>
               <p className="mt-1 text-xs text-indigo-200/60">Verify claims and analyze images with reliable AI driven detection.</p>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 bg-white/90 p-10 flex flex-col justify-center">
-          <p className="text-sm text-gray-500">Secure login • Single sign-on ready</p>
-          <h2 className="text-2xl font-semibold text-gray-900 mt-2">Sign in to continue</h2>
+        <div className="flex-1 bg-white/90 p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
+          <p className="text-xs sm:text-sm text-gray-500">Secure login • Single sign-on ready</p>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mt-2">Sign in to continue</h2>
 
           {error && (
-            <div className="mt-6 text-sm text-red-700 bg-red-50 border border-red-100 rounded-2xl px-4 py-3">
+            <div className="mt-4 sm:mt-6 text-xs sm:text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            <label className="block text-sm text-gray-700">
+          <form onSubmit={handleSubmit} className="mt-4 sm:mt-6 space-y-4 sm:space-y-5">
+            <label className="block text-xs sm:text-sm text-gray-700">
               Email
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-100 focus:outline-none"
+                className="mt-1.5 sm:mt-2 w-full rounded-xl sm:rounded-2xl border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base focus:border-indigo-500 focus:ring-indigo-100 focus:outline-none"
                 placeholder="you@fakelens.ai"
               />
             </label>
 
-            <label className="block text-sm text-gray-700">
+            <label className="block text-xs sm:text-sm text-gray-700">
               Password
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-100 focus:outline-none"
+                className="mt-1.5 sm:mt-2 w-full rounded-xl sm:rounded-2xl border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base focus:border-indigo-500 focus:ring-indigo-100 focus:outline-none"
                 placeholder="••••••••"
               />
             </label>
@@ -99,14 +99,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold py-3 shadow-lg shadow-indigo-500/30 disabled:opacity-60 transition"
+              className="w-full rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold py-3 sm:py-3.5 text-sm sm:text-base shadow-lg shadow-indigo-500/30 disabled:opacity-60 transition touch-manipulation"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-4">
-            <div className="flex items-center gap-3 my-4">
+          <div className="mt-4 sm:mt-5">
+            <div className="flex items-center gap-2 sm:gap-3 my-3 sm:my-4">
               <div className="flex-1 h-px bg-gray-200/10" />
               <div className="text-xs text-gray-400">or continue with</div>
               <div className="flex-1 h-px bg-gray-200/10" />
@@ -115,12 +115,12 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => signIn('google', { callbackUrl: '/' })}
-              className="w-full rounded-2xl bg-white text-gray-900 font-medium py-3 shadow-sm hover:shadow-md transition flex items-center justify-center gap-3"
+              className="w-full rounded-xl sm:rounded-2xl bg-white text-gray-900 font-medium py-3 sm:py-3.5 text-sm sm:text-base shadow-sm hover:shadow-md transition touch-manipulation flex items-center justify-center gap-2 sm:gap-3"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 533.5 544.3"
-                className="w-5 h-5"
+                className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                 aria-hidden="true"
               >
                 <path fill="#4285F4" d="M533.5 278.4c0-18.6-1.5-37-4.4-54.7H272v103.5h146.9c-6.3 34.1-25.2 62.9-53.8 82.1v68.2h86.9c50.9-46.9 81.5-116.2 81.5-198.9z" />
@@ -132,7 +132,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <p className="text-sm text-gray-600 mt-6">
+          <p className="text-xs sm:text-sm text-gray-600 mt-4 sm:mt-6">
             Need an account?{' '}
             <Link href="/auth/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
               Create one now
