@@ -14,6 +14,7 @@ import { monitorRealTime } from '@/lib/realTimeMonitoring';
 import { analyzeAllLinks, getFactCheckingSuggestions } from '@/lib/linkAnalyzer';
 import { trackApiUsage } from '@/lib/analytics';
 import { auth } from '@/lib/auth';
+import { runComprehensiveAnalysis, type ComprehensiveAnalysis } from '@/lib/comprehensiveAnalysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -648,6 +649,63 @@ export async function POST(request: NextRequest) {
         debunkLinks: debunkLinks.slice(0, 5),
       };
       console.log('Analysis object created');
+
+      // ============================================
+      // COMPREHENSIVE MULTI-STEP ANALYSIS
+      // This enhanced analysis is specifically designed to catch newly fabricated fake news
+      // ============================================
+      console.log('Starting comprehensive multi-step analysis for enhanced fake news detection...');
+      
+      let comprehensiveAnalysis: ComprehensiveAnalysis | null = null;
+      try {
+        comprehensiveAnalysis = await runComprehensiveAnalysis(
+          claimText,
+          supportLinks,
+          debunkLinks,
+          language
+        );
+        console.log('Comprehensive analysis completed:', comprehensiveAnalysis.finalVerdict.verdict);
+        
+        // Override the basic analysis with comprehensive results if available
+        if (comprehensiveAnalysis.finalVerdict) {
+          // Map comprehensive verdict to original verdict type
+          let mappedVerdict = comprehensiveAnalysis.finalVerdict.verdict;
+          if (mappedVerdict === 'misleading') {
+            mappedVerdict = 'fake'; // Map misleading to fake for compatibility
+          }
+          
+          analysis.verdict = mappedVerdict as 'fake' | 'real' | 'uncertain';
+          analysis.confidence = comprehensiveAnalysis.finalVerdict.confidence;
+          
+          // Enhance reasons with comprehensive insights
+          const enhancedReasons: string[] = [];
+          
+          // Add comprehensive explanation
+          enhancedReasons.push(comprehensiveAnalysis.finalVerdict.explanation);
+          
+          // Add key factors
+          if (comprehensiveAnalysis.finalVerdict.keyFactors.length > 0) {
+            enhancedReasons.push('\n**Analysis Factors:**');
+            comprehensiveAnalysis.finalVerdict.keyFactors.slice(0, 5).forEach(factor => {
+              enhancedReasons.push(factor.factor);
+            });
+          }
+          
+          // Add recommendations
+          if (comprehensiveAnalysis.finalVerdict.recommendations.length > 0) {
+            enhancedReasons.push('\n**Recommendations:**');
+            comprehensiveAnalysis.finalVerdict.recommendations.forEach(rec => {
+              enhancedReasons.push(rec);
+            });
+          }
+          
+          analysis.reasons = enhancedReasons;
+          console.log('Analysis enhanced with comprehensive results');
+        }
+      } catch (error) {
+        console.error('Comprehensive analysis failed, falling back to basic analysis:', error);
+        // Continue with basic analysis if comprehensive analysis fails
+      }
 
       // Generate response with Gemini
       console.log('Calling Gemini API...');
