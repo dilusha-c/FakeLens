@@ -47,10 +47,12 @@ export function detectFakeNews(text: string): FakeDetectionResult {
   }
 
   // 3. Check for all caps words
-  const allCapsWords = text.match(/\b[A-Z]{3,}\b/g) || [];
+  const knownAcronyms = ['USA', 'UK', 'EU', 'UN', 'WHO', 'NATO', 'UNICEF', 'UNHCR', 'FBI', 'CIA', 'CDC', 'NASA'];
+  const allCapsWordsRaw = text.match(/\b[A-Z]{3,}\b/g) || [];
+  const allCapsWords = allCapsWordsRaw.filter(word => !knownAcronyms.includes(word));
   if (allCapsWords.length >= 3) {
-    score += 0.1;
-    reasons.push('Uses ALL CAPS formatting excessively, often seen in sensationalized content');
+    score += 0.08;
+    reasons.push('Uses ALL CAPS formatting excessively, often seen in sensationalized content (ignoring standard acronyms)');
   }
 
   // 4. Check text length and structure
@@ -68,6 +70,20 @@ export function detectFakeNews(text: string): FakeDetectionResult {
     reasons.push('No clear attribution or sources mentioned in the content');
   } else if (hasSourceIndicators) {
     score -= 0.1;
+    // Bonus: credible sources explicitly mentioned
+    const credibleSources = ['reuters', 'ap news', 'associated press', 'bbc', 'guardian', 'new york times', 'nytimes', 'washington post', 'who', 'world health organization'];
+    const hasCredibleSource = credibleSources.some(src => lowerText.includes(src));
+    if (hasCredibleSource) {
+      score -= 0.08;
+      reasons.push('Mentions credible sources or official statements');
+    }
+    // Additional bonus: multiple named official sources/ministries/commands quoted
+    const officialIndicators = ['president', 'minister', 'ministry', 'command', 'department', 'spokesperson', 'spokesman', 'spokeswoman', 'secretary', 'foreign minister', 'defense minister', 'africom', 'state department'];
+    const officialCount = officialIndicators.filter(ind => lowerText.includes(ind)).length;
+    if (officialCount >= 2) {
+      score -= 0.12;
+      reasons.push('Multiple named official sources are cited');
+    }
   }
 
   // 6. Check for vague claims

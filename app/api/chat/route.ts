@@ -578,34 +578,36 @@ export async function POST(request: NextRequest) {
       }
       
       // Reduce fake score when there are many supporting sources
-      if (supportLinks.length > 0) {
-        const supportSum = supportLinks.reduce((s, l) => s + (l.confidence ?? 0.6), 0);
-        const avgSupport = supportSum / supportLinks.length;
+      // Only let strong, non-conflicting support lower the fake score
+      const strongSupportLinks = supportLinks.filter(link => (link.confidence ?? 0.5) >= 0.6);
+      if (debunkLinks.length === 0 && strongSupportLinks.length > 0) {
+        const supportSum = strongSupportLinks.reduce((s, l) => s + (l.confidence ?? 0.6), 0);
+        const avgSupport = supportSum / strongSupportLinks.length;
         
         // Check if any support links are from highly trusted international sources
         const internationalTrusted = ['bbc.com', 'bbc.co.uk', 'reuters.com', 'apnews.com', 'npr.org', 'cnn.com', 'theguardian.com', 'nytimes.com'];
-        const hasTrustedIntlSource = supportLinks.some(link => 
+        const hasTrustedIntlSource = strongSupportLinks.some(link => 
           internationalTrusted.some(domain => (link.source || '').includes(domain))
         );
         
-        // CRITICAL FIX: If a highly trusted international news source reports it, give strong credibility
+        // Only apply a strong reduction when trusted sources explicitly support the claim
         let supportEffect: number;
         if (hasTrustedIntlSource) {
           // Strong reduction for international trusted sources (BBC, Reuters, etc.)
-          supportEffect = 0.35 + (avgSupport * 0.25); // Up to 0.6 total reduction
+          supportEffect = 0.30 + (avgSupport * 0.2); // Cap reduction to keep balance
           console.log('Applied STRONG support effect (trusted intl source):', supportEffect);
         } else {
-          // Normal reduction for other sources
-          supportEffect = 0.08 + (avgSupport * 0.22);
+          // Conservative reduction for other sources with clear support
+          supportEffect = 0.06 + (avgSupport * 0.18);
           console.log('Applied support effect:', supportEffect, 'avgSupport:', avgSupport);
         }
         
         adjustedScore = Math.max(0, adjustedScore - supportEffect);
       }
 
-      // Additional bonus reduction when multiple supports and no debunks
-      if (supportLinks.length >= 3 && debunkLinks.length === 0) {
-        adjustedScore = Math.max(0, adjustedScore - 0.12);
+      // Additional bonus reduction only when there are multiple strong supports and zero debunks
+      if (debunkLinks.length === 0 && strongSupportLinks.length >= 3) {
+        adjustedScore = Math.max(0, adjustedScore - 0.08);
       }
       
       // Recalculate verdict and confidence with adjusted score

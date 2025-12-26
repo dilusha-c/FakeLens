@@ -178,15 +178,12 @@ export function classifyLinks(
       link.confidence = Math.min(1, (link.confidence || confidence) + 0.2);
       supportLinks.push(link);
     } else {
-      // Neutral; push to support if trusted, else ignore or include as low-confidence support
+      // Neutral result: only treat as support when the source is trusted; otherwise keep it neutral
       if (TRUSTED_DOMAINS.some(d => domain.includes(d))) {
-        link.confidence = (link.confidence || confidence);
-        supportLinks.push(link);
-      } else {
-        // Low-confidence support (helps but not decisive)
-        link.confidence = (link.confidence || 0.45);
+        link.confidence = link.confidence ?? confidence;
         supportLinks.push(link);
       }
+      // If the source is unverified/low trust and not explicitly supportive, skip to avoid biasing toward "real"
     }
   }
 
